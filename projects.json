@@ -1,4 +1,20 @@
 {
-  "updatedAt": null,
-  "projects": []
+  "updatedAt": "2026-07-28T16:20:34.114Z",
+  "projects": [
+    {
+      "name": "Bitcoin",
+      "slug": "bitcoin",
+      "coingeckoId": "bitcoin",
+      "active": true,
+      "sortOrder": 1,
+      "description": "Decentralized digital currency",
+      "category": "Layer 1",
+      "website": "https://bitcoin.org",
+      "whitepaper": "https://bitcoin.org/bitcoin.pdf",
+      "github": "https://github.com/bitcoin/bitcoin",
+      "docs": "",
+      "twitter": "",
+      "notionPageId": "3ab66424-0c11-80eb-bb16-cd02c4ece48a"
+    }
+  ]
 }
