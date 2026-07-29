@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-29T08:56:43.803Z",
+  "updatedAt": "2026-07-29T10:38:24.107Z",
   "projects": [
     {
       "name": "Bitcoin",
@@ -14,7 +14,12 @@
       "github": "https://github.com/bitcoin/bitcoin",
       "docs": "",
       "twitter": "",
-      "notionPageId": "3ab66424-0c11-80eb-bb16-cd02c4ece48a"
+      "chartSource": "coingecko",
+      "network": "",
+      "contractAddress": "",
+      "poolAddress": "",
+      "tradingPair": "",
+      "exchange": ""
     },
     {
       "name": "Arrow Finance",
@@ -29,7 +34,12 @@
       "github": "",
       "docs": "",
       "twitter": "",
-      "notionPageId": "3ac66424-0c11-806e-a6ce-d4cd8f456c9b"
+      "chartSource": "coingecko",
+      "network": "",
+      "contractAddress": "",
+      "poolAddress": "",
+      "tradingPair": "",
+      "exchange": ""
     }
   ]
 }
