@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-29T10:38:24.107Z",
+  "updatedAt": "2026-07-29T10:49:21.479Z",
   "projects": [
     {
       "name": "Bitcoin",
@@ -14,7 +14,7 @@
       "github": "https://github.com/bitcoin/bitcoin",
       "docs": "",
       "twitter": "",
-      "chartSource": "coingecko",
+      "chartSource": "exchange",
       "network": "",
       "contractAddress": "",
       "poolAddress": "",
@@ -34,12 +34,12 @@
       "github": "",
       "docs": "",
       "twitter": "",
-      "chartSource": "coingecko",
-      "network": "",
-      "contractAddress": "",
-      "poolAddress": "",
-      "tradingPair": "",
-      "exchange": ""
+      "chartSource": "geckoterminal",
+      "network": "robinhood",
+      "contractAddress": "0xf2915d1e3c1b0c769d0c756ec43f1c1f6c99cd03",
+      "poolAddress": "0xe40d98d88038e0b844f844dce6ae3c79ec01ec53",
+      "tradingPair": "ARROW/USDT",
+      "exchange": "MEXC"
     }
   ]
 }
