@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-29T10:49:21.479Z",
+  "updatedAt": "2026-07-29T22:41:14.487Z",
   "projects": [
     {
       "name": "Bitcoin",
@@ -9,7 +9,7 @@
       "sortOrder": 1,
       "description": "Decentralized digital currency",
       "category": "",
-      "website": "https://bitcoin.org",
+      "website": "",
       "whitepaper": "",
       "github": "https://github.com/bitcoin/bitcoin",
       "docs": "",
@@ -29,7 +29,7 @@
       "sortOrder": 2,
       "description": "DeFi on Robinhood Ecosystem",
       "category": "",
-      "website": "https://www.arrowfinance.io/",
+      "website": "",
       "whitepaper": "",
       "github": "",
       "docs": "",
