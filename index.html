@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Crypto Dashboard</title>
+<meta name="description" content="Live crypto project dashboard" />
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
+<style>
+  :root {
+    --bg: #0a0d12;
+    --bg-elevated: #10151d;
+    --panel: rgba(255, 255, 255, 0.04);
+    --panel-border: rgba(255, 255, 255, 0.08);
+    --text: #e8edf3;
+    --text-dim: #8b96a5;
+    --text-faint: #5a6474;
+    --accent: #4fd1a5;
+    --accent-blue: #4f8cff;
+    --up: #3ddc97;
+    --down: #ff5c72;
+    --radius: 14px;
+    --radius-sm: 9px;
+    --font-display: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-display);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(79, 140, 255, 0.10), transparent 45%),
+      radial-gradient(circle at 85% 15%, rgba(79, 209, 165, 0.08), transparent 40%),
+      var(--bg);
+  }
+
+  a { color: inherit; }
+
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 24px 20px 64px;
+  }
+
+  /* ---------- Top bar ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+    color: var(--text);
+  }
+  .brand img { width: 22px; height: 22px; }
+  .brand span { color: var(--text-dim); font-weight: 500; }
+  .refresh-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+  }
+  .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 0 rgba(79, 209, 165, 0.6);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(79, 209, 165, 0.5); }
+    70% { box-shadow: 0 0 0 6px rgba(79, 209, 165, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(79, 209, 165, 0); }
+  }
+  .dot.stale { background: var(--text-faint); animation: none; }
+
+  /* ---------- Glass panel base ---------- */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  /* ---------- Generic centered state screens ---------- */
+  .state-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 72px 24px;
+    gap: 14px;
+  }
+  .state-icon {
+    width: 52px; height: 52px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    font-size: 22px;
+    margin-bottom: 6px;
+  }
+  .state-title { font-size: 18px; font-weight: 600; }
+  .state-body { color: var(--text-dim); font-size: 14px; max-width: 440px; line-height: 1.6; }
+  .state-body code {
+    background: rgba(255,255,255,0.06);
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+  }
+  .btn {
+    margin-top: 6px;
+    padding: 9px 18px;
+    border-radius: 999px;
+    border: 1px solid var(--panel-border);
+    background: rgba(255,255,255,0.06);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .btn:hover { background: rgba(255,255,255,0.11); border-color: rgba(255,255,255,0.16); }
+  .btn:focus-visible { outline: 2px solid var(--accent-blue); outline-offset: 2px; }
+  .btn-link { color: var(--accent-blue); text-decoration: none; font-size: 13px; }
+
+  .onboard-steps {
+    text-align: left;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-sm);
+    padding: 18px 22px;
+    margin-top: 8px;
+    max-width: 520px;
+  }
+  .onboard-steps ol { margin: 0; padding-left: 18px; color: var(--text-dim); font-size: 13.5px; line-height: 1.9; }
+  .onboard-steps li strong { color: var(--text); }
+
+  /* ---------- Skeleton ---------- */
+  .skel {
+    background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.10) 37%, rgba(255,255,255,0.05) 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.4s ease infinite;
+    border-radius: 8px;
+  }
+  @keyframes shimmer {
+    0% { background-position: 100% 50%; }
+    100% { background-position: 0 50%; }
+  }
+  .skel-header { display: flex; align-items: center; gap: 14px; padding: 22px; }
+  .skel-logo { width: 44px; height: 44px; border-radius: 50%; }
+  .skel-lines { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .skel-line { height: 14px; width: 40%; }
+  .skel-line.w60 { width: 60%; }
+  .skel-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 0 22px 22px; }
+  .skel-cell { height: 58px; }
+  .skel-chart { height: 320px; margin: 0 22px 22px; }
+  @media (max-width: 640px) { .skel-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  /* ---------- Project list (no slug given) ---------- */
+  .list-header { margin-bottom: 18px; }
+  .list-header h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .list-header p { margin: 0; color: var(--text-dim); font-size: 13.5px; }
+  .project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 14px;
+  }
+  .project-card {
+    padding: 18px;
+    text-decoration: none;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  .project-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.18); background: rgba(255,255,255,0.06); }
+  .project-card:focus-visible { outline: 2px solid var(--accent-blue); outline-offset: 2px; }
+  .project-card-top { display: flex; align-items: center; gap: 10px; }
+  .project-card-top img { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.06); }
+  .project-card-name { font-weight: 600; font-size: 14.5px; }
+  .project-card-cat { font-size: 11.5px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.04em; }
+  .project-card-price { font-family: var(--font-mono); font-size: 15px; display: flex; align-items: baseline; gap: 8px; }
+  .chg { font-size: 12.5px; font-weight: 600; font-family: var(--font-mono); }
+  .chg.up { color: var(--up); }
+  .chg.down { color: var(--down); }
+  .project-card-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+
+  /* ---------- Dashboard header ---------- */
+  #dashboard { display: none; }
+  .dash-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 18px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .dash-id { display: flex; align-items: center; gap: 14px; }
+  .dash-id img { width: 44px; height: 44px; border-radius: 50%; }
+  .dash-name-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .dash-name { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+  .dash-symbol { color: var(--text-faint); font-size: 13px; font-weight: 600; text-transform: uppercase; }
+  .dash-rank { font-size: 11px; color: var(--text-dim); background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 999px; }
+  .dash-links { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .dash-links a {
+    font-size: 12px; color: var(--text-dim); text-decoration: none;
+    padding: 4px 10px; border-radius: 999px; border: 1px solid var(--panel-border);
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .dash-links a:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+  .dash-price-block { text-align: right; }
+  .dash-price { font-family: var(--font-mono); font-size: 30px; font-weight: 700; letter-spacing: -0.01em; }
+  .dash-change { font-family: var(--font-mono); font-size: 14px; font-weight: 600; margin-top: 2px; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--panel-border);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .stat-cell {
+    background: var(--bg-elevated);
+    padding: 14px 16px;
+  }
+  .stat-label { font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .stat-value { font-family: var(--font-mono); font-size: 14.5px; font-weight: 600; }
+  @media (max-width: 720px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  /* ---------- Chart ---------- */
+  .chart-panel { padding: 20px; margin-bottom: 16px; }
+  .chart-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+  .chart-title { font-size: 13px; color: var(--text-dim); font-weight: 500; }
+  .timeframes { display: flex; gap: 4px; background: rgba(255,255,255,0.03); padding: 3px; border-radius: 999px; }
+  .tf-btn {
+    border: none; background: transparent; color: var(--text-faint);
+    font-size: 12.5px; font-weight: 600; padding: 6px 12px; border-radius: 999px; cursor: pointer;
+    font-family: var(--font-display);
+  }
+  .tf-btn.active { background: var(--panel); color: var(--text); box-shadow: 0 0 0 1px var(--panel-border); }
+  .tf-btn:focus-visible { outline: 2px solid var(--accent-blue); outline-offset: 1px; }
+  .chart-canvas-wrap { position: relative; height: 340px; }
+  .chart-loading, .chart-error {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: var(--text-faint); font-size: 13px; flex-direction: column; gap: 8px;
+  }
+
+  .last-updated { text-align: center; color: var(--text-faint); font-size: 12px; margin-top: 18px; font-family: var(--font-mono); }
+  .stale-banner {
+    display: none;
+    text-align: center; font-size: 12.5px; color: #d9a441;
+    background: rgba(217, 164, 65, 0.08); border: 1px solid rgba(217, 164, 65, 0.25);
+    border-radius: var(--radius-sm); padding: 8px 14px; margin-bottom: 16px;
+  }
+
+  ::selection { background: rgba(79, 140, 255, 0.35); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dot, .skel { animation: none; }
+    .project-card { transition: none; }
+  }
+
+  footer.page-footer {
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 11.5px;
+    margin-top: 40px;
+  }
+  footer.page-footer a { color: var(--text-faint); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="topbar">
+    <a href="?" class="brand" aria-label="Home">
+      <svg width="22" height="22" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#10151d"/><path d="M9 20 L13 12 L17 17 L23 8" stroke="#4fd1a5" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="23" cy="8" r="2" fill="#4fd1a5"/></svg>
+      Crypto Dashboard
+    </a>
+    <div class="refresh-indicator" id="refreshIndicator">
+      <span class="dot" id="refreshDot"></span>
+      <span id="refreshLabel">live</span>
+    </div>
+  </div>
+
+  <div id="app">
+    <!-- All states render into here -->
+    <div class="panel skel-header">
+      <div class="skel skel-logo"></div>
+      <div class="skel-lines">
+        <div class="skel skel-line w60"></div>
+        <div class="skel skel-line"></div>
+      </div>
+    </div>
+    <div class="panel skel-grid" style="margin-top:16px;">
+      <div class="skel skel-cell"></div><div class="skel skel-cell"></div>
+      <div class="skel skel-cell"></div><div class="skel skel-cell"></div>
+    </div>
+    <div class="panel skel-chart"></div>
+  </div>
+
+  <footer class="page-footer">
+    Data via <a href="https://www.coingecko.com" target="_blank" rel="noopener">CoinGecko</a> · Metadata synced from Notion
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@0.2.1/dist/chartjs-chart-financial.min.js"></script>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------------------------------------------------------------------
+  // Config
+  // ---------------------------------------------------------------------
+  var PROJECTS_JSON_URL = "projects.json";
+  var COINGECKO_BASE = "https://api.coingecko.com/api/v3";
+  var GECKOTERMINAL_BASE = "https://api.geckoterminal.com/api/v2";
+  var DEXSCREENER_BASE = "https://api.dexscreener.com/latest/dex";
+  var MARKET_REFRESH_MS = 30 * 1000;
+  var METADATA_RECHECK_MS = 60 * 1000;
+  var LS_PREFIX = "cgdash:";
+  var TIMEFRAMES = [
+    { key: "24H", days: 1 },
+    { key: "7D", days: 7 },
+    { key: "30D", days: 30 },
+    { key: "90D", days: 90 },
+    { key: "1Y", days: 365 }
+  ];
+
+  var appEl = document.getElementById("app");
+  var refreshDot = document.getElementById("refreshDot");
+  var refreshLabel = document.getElementById("refreshLabel");
+
+  var state = {
+    slug: null,
+    projects: null,
+    project: null,
+    marketTimer: null,
+    metaTimer: null,
+    chart: null,
+    activeTimeframe: TIMEFRAMES[0],
+    coinData: null
+  };
+
+  // ---------------------------------------------------------------------
+  // Small utilities
+  // ---------------------------------------------------------------------
+  function qs(name) {
+    return new URLSearchParams(window.location.search).get(name);
+  }
+
+  function esc(str) {
+    var div = document.createElement("div");
+    div.textContent = str == null ? "" : String(str);
+    return div.innerHTML;
+  }
+
+  function formatPrice(n) {
+    if (n === null || n === undefined || isNaN(n)) return "—";
+    if (n >= 1) {
+      return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    if (n >= 0.01) {
+      return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+    }
+    if (n === 0) return "$0.00";
+    return "$" + n.toPrecision(4);
+  }
+
+  function formatCompact(n) {
+    if (n === null || n === undefined || isNaN(n)) return "—";
+    var abs = Math.abs(n);
+    if (abs >= 1e12) return (n / 1e12).toFixed(2) + "T";
+    if (abs >= 1e9) return (n / 1e9).toFixed(2) + "B";
+    if (abs >= 1e6) return (n / 1e6).toFixed(2) + "M";
+    if (abs >= 1e3) return (n / 1e3).toFixed(2) + "K";
+    return n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  }
+
+  function formatPct(n) {
+    if (n === null || n === undefined || isNaN(n)) return "—";
+    var sign = n > 0 ? "+" : "";
+    return sign + n.toFixed(2) + "%";
+  }
+
+  function formatDate(iso) {
+    if (!iso) return "—";
+    try {
+      var d = new Date(iso);
+      return d.toLocaleString(undefined, {
+        month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+      });
+    } catch (e) { return "—"; }
+  }
+
+  function lsGet(key) {
+    try {
+      var raw = localStorage.getItem(LS_PREFIX + key);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+
+  function lsSet(key, value) {
+    try { localStorage.setItem(LS_PREFIX + key, JSON.stringify(value)); } catch (e) { /* quota / privacy mode — non-fatal */ }
+  }
+
+  function setRefreshState(mode) {
+    // mode: "live" | "stale" | "offline"
+    if (mode === "live") {
+      refreshDot.className = "dot";
+      refreshLabel.textContent = "live";
+    } else if (mode === "stale") {
+      refreshDot.className = "dot stale";
+      refreshLabel.textContent = "cached";
+    } else {
+      refreshDot.className = "dot stale";
+      refreshLabel.textContent = "offline";
+    }
+  }
+
+  function clearTimers() {
+    if (state.marketTimer) { clearInterval(state.marketTimer); state.marketTimer = null; }
+    if (state.metaTimer) { clearInterval(state.metaTimer); state.metaTimer = null; }
+  }
+
+  // ---------------------------------------------------------------------
+  // State screens
+  // ---------------------------------------------------------------------
+  function renderState(html) {
+    clearTimers();
+    appEl.innerHTML = html;
+  }
+
+  function iconWrap(char) {
+    return '<div class="state-icon">' + char + "</div>";
+  }
+
+  function renderOnboarding() {
+    setRefreshState("offline");
+    renderState(
+      '<div class="panel state-screen">' +
+        iconWrap("🛠") +
+        '<div class="state-title">Dashboard not set up yet</div>' +
+        '<div class="state-body">No projects have synced from Notion yet. This is expected right after first deployment — the sync job runs automatically, or you can trigger it manually.</div>' +
+        '<div class="onboard-steps"><ol>' +
+        "<li><strong>Check GitHub Actions</strong> — the \"Sync Notion → projects.json\" workflow should run within 15 minutes of deployment, or trigger it manually from the Actions tab.</li>" +
+        "<li><strong>Verify secrets</strong> — <code>NOTION_TOKEN</code> and <code>NOTION_DATABASE_ID</code> must be set in the repository's Settings → Secrets.</li>" +
+        "<li><strong>Add a row</strong> — make sure your Notion database has at least one row with Active checked, a Slug, and a CoinGecko ID.</li>" +
+        "</ol></div>" +
+        '<button class="btn" id="retryBtn">Check again</button>' +
+        "</div>"
+    );
+    document.getElementById("retryBtn").addEventListener("click", boot);
+  }
+
+  function renderError(title, body, opts) {
+    opts = opts || {};
+    setRefreshState("offline");
+    renderState(
+      '<div class="panel state-screen">' +
+        iconWrap("⚠") +
+        '<div class="state-title">' + esc(title) + "</div>" +
+        '<div class="state-body">' + body + "</div>" +
+        (opts.showRetry !== false ? '<button class="btn" id="retryBtn">Try again</button>' : "") +
+        (opts.showHome ? '<a class="btn-link" href="?" style="margin-top:6px;">← Back to all projects</a>' : "") +
+        "</div>"
+    );
+    if (opts.showRetry !== false) {
+      document.getElementById("retryBtn").addEventListener("click", opts.onRetry || boot);
+    }
+  }
+
+  function renderOffline() {
+    renderError(
+      "You're offline",
+      "This dashboard needs an internet connection to load live market data. Check your connection and try again.",
+      { onRetry: boot }
+    );
+  }
+
+  function renderNotFound(slug) {
+    renderError(
+      "Project not found",
+      'No project is configured with the slug <code>' + esc(slug) + "</code>. Check the URL, or browse all available projects.",
+      { showRetry: false, showHome: true }
+    );
+  }
+
+  function renderInactive(project) {
+    renderError(
+      project.name + " is currently inactive",
+      "This project has been marked inactive in Notion and its dashboard is temporarily unavailable.",
+      { showRetry: false, showHome: true }
+    );
+  }
+
+  function renderMissingSlugConfig(project) {
+    renderError(
+      "Missing CoinGecko ID",
+      'The project <strong>' + esc(project.name) + "</strong> has no CoinGecko ID configured in Notion, so live market data can't be loaded.",
+      { showRetry: false, showHome: true }
+    );
+  }
+
+  // ---------------------------------------------------------------------
+  // Project list (no slug in URL)
+  // ---------------------------------------------------------------------
+  function renderList(projects) {
+    var active = projects.filter(function (p) { return p.active; });
+
+    if (active.length === 0) {
+      renderError(
+        "No active projects",
+        "There are projects in Notion, but none are marked Active yet. Check the Active checkbox on a row to publish its dashboard.",
+        { showRetry: true, onRetry: boot }
+      );
+      return;
+    }
+
+    var cardsHtml = active.map(function (p) {
+      return (
+        '<a class="panel project-card" href="?slug=' + encodeURIComponent(p.slug) + '" data-cg-id="' + esc(p.coingeckoId) + '">' +
+          '<div class="project-card-top">' +
+            '<img alt="" data-role="logo" src="" style="display:none;" />' +
+            '<div>' +
+              '<div class="project-card-name">' + esc(p.name) + "</div>" +
+              (p.category ? '<div class="project-card-cat">' + esc(p.category) + "</div>" : "") +
+            "</div>" +
+          "</div>" +
+          '<div class="project-card-price" data-role="price"><span class="skel" style="width:70px;height:16px;display:inline-block;"></span></div>' +
+          (p.description ? '<div class="project-card-desc">' + esc(p.description) + "</div>" : "") +
+        "</a>"
+      );
+    }).join("");
+
+    renderState(
+      '<div class="list-header">' +
+        "<h1>Projects</h1>" +
+        "<p>" + active.length + " active dashboard" + (active.length === 1 ? "" : "s") + "</p>" +
+      "</div>" +
+      '<div class="project-grid">' + cardsHtml + "</div>"
+    );
+    setRefreshState("live");
+
+    var ids = active.map(function (p) { return p.coingeckoId; }).filter(Boolean);
+    if (ids.length) fetchListPrices(ids);
+  }
+
+  function fetchListPrices(ids) {
+    var url = COINGECKO_BASE + "/simple/price?ids=" + encodeURIComponent(ids.join(",")) +
+      "&vs_currencies=usd&include_24hr_change=true&include_market_cap=false";
+    fetch(url).then(function (r) {
+      if (!r.ok) throw new Error("bad status " + r.status);
+      return r.json();
+    }).then(function (data) {
+      lsSet("listPrices", { ts: Date.now(), data: data });
+      applyListPrices(data);
+    }).catch(function () {
+      var cached = lsGet("listPrices");
+      if (cached) applyListPrices(cached.data);
+    });
+
+    var imgUrl = COINGECKO_BASE + "/coins/markets?vs_currency=usd&ids=" + encodeURIComponent(ids.join(","));
+    fetch(imgUrl).then(function (r) { return r.ok ? r.json() : []; }).then(function (list) {
+      var byId = {};
+      list.forEach(function (c) { byId[c.id] = c.image; });
+      document.querySelectorAll(".project-card").forEach(function (card) {
+        var id = card.getAttribute("data-cg-id");
+        var img = card.querySelector('[data-role="logo"]');
+        if (byId[id] && img) { img.src = byId[id]; img.style.display = "block"; }
+      });
+    }).catch(function () { /* logos are cosmetic — fail silently */ });
+  }
+
+  function applyListPrices(data) {
+    document.querySelectorAll(".project-card").forEach(function (card) {
+      var id = card.getAttribute("data-cg-id");
+      var priceEl = card.querySelector('[data-role="price"]');
+      if (!priceEl) return;
+      var entry = data[id];
+      if (!entry) { priceEl.innerHTML = '<span style="color:var(--text-faint);font-size:12.5px;">no data</span>'; return; }
+      var chg = entry.usd_24h_change;
+      var chgClass = chg > 0 ? "up" : chg < 0 ? "down" : "";
+      priceEl.innerHTML = formatPrice(entry.usd) +
+        '<span class="chg ' + chgClass + '">' + formatPct(chg) + "</span>";
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Dashboard (slug matched to an active project)
+  // ---------------------------------------------------------------------
+  function renderDashboardSkeleton() {
+    renderState(
+      '<div class="panel skel-header">' +
+        '<div class="skel skel-logo"></div>' +
+        '<div class="skel-lines"><div class="skel skel-line w60"></div><div class="skel skel-line"></div></div>' +
+      "</div>" +
+      '<div class="panel skel-grid" style="margin-top:16px;">' +
+        '<div class="skel skel-cell"></div><div class="skel skel-cell"></div><div class="skel skel-cell"></div><div class="skel skel-cell"></div>' +
+      "</div>" +
+      '<div class="panel skel-chart" style="margin-top:16px;"></div>'
+    );
+  }
+
+  var STAT_DEFS = [
+    { key: "rank", label: "Rank", fmt: function (m) { return m.market_cap_rank ? "#" + m.market_cap_rank : "—"; } },
+    { key: "market_cap", label: "Market Cap", fmt: function (m) { return "$" + formatCompact(m.market_data.market_cap.usd); } },
+    { key: "fdv", label: "FDV", fmt: function (m) { return m.market_data.fully_diluted_valuation && m.market_data.fully_diluted_valuation.usd ? "$" + formatCompact(m.market_data.fully_diluted_valuation.usd) : "—"; } },
+    { key: "volume", label: "24H Volume", fmt: function (m) { return "$" + formatCompact(m.market_data.total_volume.usd); } },
+    { key: "circ", label: "Circulating Supply", fmt: function (m) { return m.market_data.circulating_supply != null ? formatCompact(m.market_data.circulating_supply) : "—"; } },
+    { key: "total", label: "Total Supply", fmt: function (m) { return m.market_data.total_supply != null ? formatCompact(m.market_data.total_supply) : "—"; } },
+    { key: "max", label: "Max Supply", fmt: function (m) { return m.market_data.max_supply != null ? formatCompact(m.market_data.max_supply) : "∞"; } },
+    { key: "ath", label: "All-Time High", fmt: function (m) { return formatPrice(m.market_data.ath.usd); } },
+    { key: "atl", label: "All-Time Low", fmt: function (m) { return formatPrice(m.market_data.atl.usd); } },
+    { key: "high24", label: "24H High", fmt: function (m) { return formatPrice(m.market_data.high_24h.usd); } },
+    { key: "low24", label: "24H Low", fmt: function (m) { return formatPrice(m.market_data.low_24h.usd); } },
+    { key: "updated", label: "Last Updated", fmt: function (m) { return formatDate(m.last_updated); } }
+  ];
+
+  function renderDashboardShell(project) {
+    var linkDefs = [
+      ["website", "Website"], ["whitepaper", "Whitepaper"], ["github", "GitHub"],
+      ["docs", "Docs"], ["twitter", "Twitter / X"]
+    ];
+    var links = linkDefs
+      .filter(function (l) { return project[l[0]]; })
+      .map(function (l) { return '<a href="' + esc(project[l[0]]) + '" target="_blank" rel="noopener">' + l[1] + "</a>"; })
+      .join("");
+
+    var tfButtons = TIMEFRAMES.map(function (tf) {
+      return '<button class="tf-btn' + (tf.key === state.activeTimeframe.key ? " active" : "") + '" data-tf="' + tf.key + '">' + tf.key + "</button>";
+    }).join("");
+
+    renderState(
+      '<div id="staleBanner" class="stale-banner">Showing cached data — live update failed. Retrying automatically…</div>' +
+      '<div class="panel dash-header">' +
+        '<div class="dash-id">' +
+          '<img id="dashLogo" alt="" />' +
+          '<div>' +
+            '<div class="dash-name-row"><span class="dash-name">' + esc(project.name) + '</span><span class="dash-symbol" id="dashSymbol"></span><span class="dash-rank" id="dashRank" style="display:none;"></span></div>' +
+            '<div class="dash-links">' + links + "</div>" +
+          "</div>" +
+        "</div>" +
+        '<div class="dash-price-block">' +
+          '<div class="dash-price" id="dashPrice">—</div>' +
+          '<div class="dash-change" id="dashChange">—</div>' +
+        "</div>" +
+      "</div>" +
+      '<div class="stats-grid" id="statsGrid">' +
+        STAT_DEFS.map(function (s) {
+          return '<div class="stat-cell"><div class="stat-label">' + s.label + '</div><div class="stat-value" data-stat="' + s.key + '">—</div></div>';
+        }).join("") +
+      "</div>" +
+      '<div class="panel chart-panel">' +
+        '<div class="chart-toolbar">' +
+          '<span class="chart-title">Price (OHLC)</span>' +
+          '<div class="timeframes" id="timeframes">' + tfButtons + "</div>" +
+        "</div>" +
+        '<div class="chart-canvas-wrap" id="chartWrap"><canvas id="priceChart"></canvas></div>' +
+      "</div>" +
+      '<div class="last-updated" id="lastUpdatedLine"></div>'
+    );
+
+    document.getElementById("timeframes").addEventListener("click", function (e) {
+      var btn = e.target.closest(".tf-btn");
+      if (!btn) return;
+      var tf = TIMEFRAMES.find(function (t) { return t.key === btn.getAttribute("data-tf"); });
+      if (!tf || tf.key === state.activeTimeframe.key) return;
+      state.activeTimeframe = tf;
+      document.querySelectorAll(".tf-btn").forEach(function (b) { b.classList.toggle("active", b === btn); });
+      loadChart(project, tf);
+    });
+  }
+
+  /**
+   * fetch() wrapper with retry + exponential backoff, specifically for
+   * transient failures (429 rate limits, network hiccups). Does not retry
+   * on 404 (invalid ID) since retrying won't help — that's a config error,
+   * not a transient one.
+   */
+  function fetchWithRetry(url, opts) {
+    opts = opts || {};
+    var maxRetries = opts.maxRetries != null ? opts.maxRetries : 2;
+    var baseDelay = opts.baseDelay != null ? opts.baseDelay : 600;
+
+    function attempt(retriesLeft, delay) {
+      console.log("[debug] CoinGecko request:", url);
+      return fetch(url).then(function (r) {
+        console.log("[debug] CoinGecko response status:", r.status, "for", url);
+        if (r.status === 404) { var e = new Error("not_found"); e.kind = "invalid_id"; throw e; }
+        if (r.status === 429 || r.status >= 500) {
+          return r.clone().text().then(function (body) {
+            console.warn("[debug] CoinGecko error body:", body);
+            var e2 = new Error("retryable_" + r.status); e2.kind = "http"; e2.status = r.status; e2.retryable = true;
+            throw e2;
+          });
+        }
+        if (!r.ok) {
+          return r.clone().text().then(function (body) {
+            console.warn("[debug] CoinGecko error body:", body);
+            var e3 = new Error("http_" + r.status); e3.kind = "http"; e3.status = r.status; throw e3;
+          });
+        }
+        return r.json();
+      }).catch(function (err) {
+        console.error("[debug] CoinGecko fetch exception:", err);
+        var shouldRetry = (err && (err.retryable || err.name === "TypeError")) && retriesLeft > 0;
+        if (!shouldRetry) throw err;
+        return new Promise(function (resolve) {
+          setTimeout(resolve, delay);
+        }).then(function () {
+          return attempt(retriesLeft - 1, delay * 2);
+        });
+      });
+    }
+
+    return attempt(maxRetries, baseDelay);
+  }
+
+  function applyMarketData(project, data, opts) {
+    opts = opts || {};
+    state.coinData = data;
+    var md = data.market_data;
+
+    document.getElementById("dashLogo").src = data.image && (data.image.small || data.image.thumb) || "";
+    document.getElementById("dashSymbol").textContent = (data.symbol || "").toUpperCase();
+    var rankEl = document.getElementById("dashRank");
+    if (data.market_cap_rank) { rankEl.style.display = "inline-block"; rankEl.textContent = "#" + data.market_cap_rank; }
+
+    document.getElementById("dashPrice").textContent = formatPrice(md.current_price.usd);
+    var chg = md.price_change_percentage_24h;
+    var chEl = document.getElementById("dashChange");
+    chEl.textContent = formatPct(chg) + " (24h)";
+    chEl.style.color = chg > 0 ? "var(--up)" : chg < 0 ? "var(--down)" : "var(--text-dim)";
+
+    STAT_DEFS.forEach(function (s) {
+      var el = document.querySelector('[data-stat="' + s.key + '"]');
+      if (el) el.textContent = s.fmt(data);
+    });
+
+    document.getElementById("lastUpdatedLine").textContent =
+      (opts.fromCache ? "Cached · " : "Updated ") + new Date(opts.fetchedAt || Date.now()).toLocaleTimeString();
+
+    document.getElementById("staleBanner").style.display = opts.fromCache ? "block" : "none";
+    setRefreshState(opts.fromCache ? "stale" : "live");
+  }
+
+  function fetchMarketData(project, silent) {
+    var url = COINGECKO_BASE + "/coins/" + encodeURIComponent(project.coingeckoId) +
+      "?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false";
+
+    return fetchWithRetry(url).then(function (data) {
+      // Guard against an unexpectedly empty/malformed success response —
+      // never hand a shape-invalid object to the renderer.
+      if (!data || typeof data !== "object" || !data.market_data || !data.market_data.current_price) {
+        var e = new Error("empty_response"); e.kind = "empty"; throw e;
+      }
+      var fetchedAt = Date.now();
+      lsSet("market:" + project.slug, { ts: fetchedAt, data: data });
+      return { data: data, fetchedAt: fetchedAt, fromCache: false };
+    }).catch(function (err) {
+      var cached = lsGet("market:" + project.slug);
+      if (cached) {
+        if (!silent) console.warn("[debug] Using cached market data due to fetch error:", err);
+        return { data: cached.data, fetchedAt: cached.ts, fromCache: true };
+      }
+      throw err;
+    });
+  }
+
+  /**
+   * Resolves a project's configured Chart Source to one of the four known
+   * keys, defaulting to "coingecko" for old rows that predate this field
+   * (rule 6: compatibility with existing Notion rows).
+   */
+  function normalizeChartSource(project) {
+    var known = ["coingecko", "geckoterminal", "dexscreener", "exchange"];
+    var s = (project.chartSource || "coingecko").toLowerCase();
+    return known.indexOf(s) === -1 ? "coingecko" : s;
+  }
+
+  /** Maps a dashboard timeframe to a GeckoTerminal timeframe/aggregate/limit combo. */
+  function geckoTerminalParamsForTimeframe(tf) {
+    switch (tf.key) {
+      case "24H": return { timeframe: "minute", aggregate: 15, limit: 96 };
+      case "7D": return { timeframe: "hour", aggregate: 4, limit: 42 };
+      case "30D": return { timeframe: "hour", aggregate: 12, limit: 60 };
+      case "90D": return { timeframe: "day", aggregate: 1, limit: 90 };
+      case "1Y": return { timeframe: "day", aggregate: 1, limit: 365 };
+      default: return { timeframe: "day", aggregate: 1, limit: 90 };
+    }
+  }
+
+  /** CoinGecko OHLC — the default source, and the fallback for every other source. */
+  function fetchCoinGeckoOHLC(project, tf) {
+    if (!project.coingeckoId) return Promise.reject(new Error("no_coingecko_id"));
+    var url = COINGECKO_BASE + "/coins/" + encodeURIComponent(project.coingeckoId) +
+      "/ohlc?vs_currency=usd&days=" + tf.days;
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error("coingecko_status_" + r.status);
+      return r.json();
+    });
+  }
+
+  /**
+   * GeckoTerminal OHLCV for newly-launched DEX-traded tokens. Converts its
+   * [timestampSeconds, open, high, low, close, volume] rows to the same
+   * [timestampMs, open, high, low, close] array shape CoinGecko returns, so
+   * renderChart() needs no changes at all.
+   */
+  function fetchGeckoTerminalOHLC(project, tf) {
+    if (!project.network || !project.poolAddress) {
+      return Promise.reject(new Error("missing_geckoterminal_config"));
+    }
+    var p = geckoTerminalParamsForTimeframe(tf);
+    var url = GECKOTERMINAL_BASE + "/networks/" + encodeURIComponent(project.network) +
+      "/pools/" + encodeURIComponent(project.poolAddress) +
+      "/ohlcv/" + p.timeframe + "?aggregate=" + p.aggregate + "&limit=" + p.limit;
+
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error("geckoterminal_status_" + r.status);
+      return r.json();
+    }).then(function (json) {
+      var list = json && json.data && json.data.attributes && json.data.attributes.ohlcv_list;
+      if (!Array.isArray(list) || list.length === 0) throw new Error("geckoterminal_empty_response");
+      return list.map(function (c) {
+        return [c[0] * 1000, c[1], c[2], c[3], c[4]];
+      });
+    });
+  }
+
+  /**
+   * DexScreener pair loader. DexScreener's public REST API returns a live
+   * pair snapshot (price, volume, liquidity) but does not expose a
+   * documented historical OHLC/candle endpoint, so there is currently no
+   * reliable way to build a real candlestick series from it. This loader
+   * is wired up per the requested architecture and will only need its
+   * `.then()` replaced with real candle mapping if/when DexScreener adds
+   * such an endpoint. Until then it fails fast so the CoinGecko fallback
+   * (rule 5) takes over immediately rather than showing a fake/flat chart.
+   */
+  function fetchDexScreenerOHLC(project, tf) {
+    if (!project.network || !project.poolAddress) {
+      return Promise.reject(new Error("missing_dexscreener_config"));
+    }
+    var url = DEXSCREENER_BASE + "/pairs/" + encodeURIComponent(project.network) +
+      "/" + encodeURIComponent(project.poolAddress);
+
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error("dexscreener_status_" + r.status);
+      return r.json();
+    }).then(function () {
+      throw new Error("dexscreener_has_no_public_ohlc_endpoint");
+    });
+  }
+
+  /**
+   * Architecture placeholder for direct exchange APIs (LBank, CoinEx, etc).
+   * No specific exchange is wired in yet — when one is chosen, implement
+   * its OHLC request here using project.exchange / project.tradingPair and
+   * resolve with the same [timestamp, open, high, low, close] array shape
+   * the other sources use.
+   */
+  function fetchExchangeOHLC(project, tf) {
+    return Promise.reject(new Error("exchange_source_not_implemented"));
+  }
+
+  /**
+   * Fetches chart data for whichever source the project is configured for.
+   * Non-CoinGecko sources automatically fall back to CoinGecko on failure
+   * (rule 5) — as long as the project has a CoinGecko ID, the chart never
+   * dead-ends just because a DEX/exchange source isn't available yet.
+   */
+  function fetchChartData(project, tf) {
+    var source = normalizeChartSource(project);
+    var primary;
+
+    if (source === "geckoterminal") primary = fetchGeckoTerminalOHLC(project, tf);
+    else if (source === "dexscreener") primary = fetchDexScreenerOHLC(project, tf);
+    else if (source === "exchange") primary = fetchExchangeOHLC(project, tf);
+    else primary = fetchCoinGeckoOHLC(project, tf);
+
+    if (source === "coingecko") return primary;
+
+    return primary.catch(function () {
+      return fetchCoinGeckoOHLC(project, tf);
+    });
+  }
+
+  function loadChart(project, tf) {
+    var wrap = document.getElementById("chartWrap");
+    var existingOverlay = wrap.querySelector(".chart-loading, .chart-error");
+    if (existingOverlay) existingOverlay.remove();
+
+    var loadingEl = document.createElement("div");
+    loadingEl.className = "chart-loading";
+    loadingEl.textContent = "Loading chart…";
+    wrap.appendChild(loadingEl);
+
+    var cacheKey = "ohlc:" + project.slug + ":" + tf.key + ":" + normalizeChartSource(project);
+
+    function showUnavailable() {
+      loadingEl.className = "chart-error";
+      loadingEl.textContent = "Chart data unavailable for this market";
+    }
+
+    fetchChartData(project, tf).then(function (raw) {
+      var ok = renderChart(raw);
+      if (!ok) {
+        var cached = lsGet(cacheKey);
+        if (cached && renderChart(cached.data)) { loadingEl.remove(); return; }
+        showUnavailable();
+        return;
+      }
+      lsSet(cacheKey, { ts: Date.now(), data: raw });
+      loadingEl.remove();
+    }).catch(function () {
+      var cached = lsGet(cacheKey);
+      if (cached && renderChart(cached.data)) {
+        loadingEl.remove();
+        return;
+      }
+      showUnavailable();
+    });
+  }
+
+  function renderChart(raw) {
+    var canvas = document.getElementById("priceChart");
+    if (!canvas) return false;
+
+    // ---- Defensive validation: only keep well-formed, numeric candles ----
+    var points = (Array.isArray(raw) ? raw : []).reduce(function (acc, c) {
+      if (!Array.isArray(c) || c.length < 5) return acc;
+
+      var x = c[0], o = c[1], h = c[2], l = c[3], cl = c[4];
+      var vals = [x, o, h, l, cl];
+
+      for (var i = 0; i < vals.length; i++) {
+        if (vals[i] === null || vals[i] === undefined || typeof vals[i] !== "number" || isNaN(vals[i])) {
+          return acc; // ignore invalid/null/NaN candle entirely
+        }
+      }
+      if (h < l || h < o || h < cl || l > o || l > cl) return acc; // ignore geometrically invalid candle
+
+      acc.push({ x: x, o: o, h: h, l: l, c: cl });
+      return acc;
+    }, []);
+
+    // Prevent chart crash on empty/entirely-invalid data — signal failure
+    // to the caller instead of instantiating a chart with no data.
+    if (points.length === 0) {
+      if (state.chart) { state.chart.destroy(); state.chart = null; }
+      return false;
+    }
+
+    points.sort(function (a, b) { return a.x - b.x; });
+
+    // ---- Destroy any previous instance to prevent duplicate/ghost canvases ----
+    if (state.chart) {
+      state.chart.destroy();
+      state.chart = null;
+    }
+    var stale = typeof Chart.getChart === "function" ? Chart.getChart(canvas) : null;
+    if (stale) stale.destroy();
+
+    state.chart = new Chart(canvas.getContext("2d"), {
+      type: "candlestick",
+      data: {
+        datasets: [{
+          label: "Price",
+          data: points,
+          color: { up: "#3ddc97", down: "#ff5c72", unchanged: "#8b96a5" },
+          borderColor: { up: "#3ddc97", down: "#ff5c72", unchanged: "#8b96a5" },
+          backgroundColor: { up: "#3ddc97", down: "#ff5c72", unchanged: "#8b96a5" },
+          borderWidth: 1,
+          barPercentage: 0.7,
+          categoryPercentage: 0.8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        parsing: false,
+        normalized: true,
+        interaction: { mode: "nearest", axis: "x", intersect: false },
+        scales: {
+          x: {
+            type: "time",
+            offset: true,
+            ticks: { color: "#5a6474", maxRotation: 0, autoSkipPadding: 20 },
+            grid: { color: "rgba(255,255,255,0.04)" }
+          },
+          y: {
+            position: "right",
+            ticks: { color: "#5a6474", callback: function (v) { return formatPrice(v); } },
+            grid: { color: "rgba(255,255,255,0.04)" }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            enabled: true,
+            mode: "nearest",
+            intersect: false,
+            backgroundColor: "#10151d",
+            borderColor: "rgba(255,255,255,0.1)",
+            borderWidth: 1,
+            titleColor: "#e8edf3",
+            bodyColor: "#e8edf3",
+            padding: 10,
+            displayColors: false,
+            callbacks: {
+              label: function (ctx) {
+                var p = ctx.raw;
+                if (!p) return "";
+                return ["O " + formatPrice(p.o), "H " + formatPrice(p.h), "L " + formatPrice(p.l), "C " + formatPrice(p.c)];
+              }
+            }
+          }
+        }
+      }
+    });
+
+    return true;
+  }
+
+  function renderDashboard(project) {
+    if (!project.coingeckoId) { renderMissingSlugConfig(project); return; }
+
+    renderDashboardSkeleton();
+
+    fetchMarketData(project).then(function (result) {
+      renderDashboardShell(project);
+      applyMarketData(project, result.data, { fetchedAt: result.fetchedAt, fromCache: result.fromCache });
+      state.activeTimeframe = TIMEFRAMES[0];
+      loadChart(project, state.activeTimeframe);
+
+      state.marketTimer = setInterval(function () {
+        fetchMarketData(project, true).then(function (r) {
+          applyMarketData(project, r.data, { fetchedAt: r.fetchedAt, fromCache: r.fromCache });
+        }).catch(function () { /* no fetch and no cache available — leave last displayed data as-is */ });
+      }, MARKET_REFRESH_MS);
+
+      state.metaTimer = setInterval(function () { checkMetadataForUpdate(); }, METADATA_RECHECK_MS);
+    }).catch(function (err) {
+      if (err && err.kind === "invalid_id") {
+        renderError(
+          "Invalid CoinGecko ID",
+          'The CoinGecko ID <code>' + esc(project.coingeckoId) + '</code> configured for <strong>' + esc(project.name) + "</strong> doesn't match any known coin. Double-check it on coingecko.com.",
+          { showRetry: false, showHome: true }
+        );
+      } else if (!navigator.onLine) {
+        renderOffline();
+      } else if (err && err.status === 429) {
+        renderError(
+          "Rate limited by CoinGecko",
+          "Too many requests were sent to CoinGecko's free API. This retries automatically with backoff — waiting a moment usually resolves it.",
+          { onRetry: function () { renderDashboard(project); } }
+        );
+      } else if (err && err.kind === "empty") {
+        renderError(
+          "Received an empty response",
+          "CoinGecko returned a response with no usable market data for this project. This is usually temporary.",
+          { onRetry: function () { renderDashboard(project); } }
+        );
+      } else {
+        renderError(
+          "Couldn't load market data",
+          "CoinGecko may be temporarily unavailable or rate-limiting requests. This will retry automatically.",
+          { onRetry: function () { renderDashboard(project); } }
+        );
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Metadata (projects.json) load + periodic re-check
+  // ---------------------------------------------------------------------
+  function checkMetadataForUpdate() {
+    fetch(PROJECTS_JSON_URL, { cache: "no-cache" }).then(function (r) {
+      if (!r.ok) return null;
+      return r.json();
+    }).then(function (data) {
+      if (!data || !data.updatedAt) return;
+      var cached = lsGet("meta");
+      if (!cached || cached.updatedAt !== data.updatedAt) {
+        lsSet("meta", data);
+        // Metadata changed server-side (e.g. project renamed/deactivated) — re-run boot to reflect it.
+        boot();
+      }
+    }).catch(function () { /* silent — this is a background best-effort check */ });
+  }
+
+  function loadProjects() {
+    return fetch(PROJECTS_JSON_URL, { cache: "no-cache" }).then(function (r) {
+      if (r.status === 404) { var e = new Error("not_found"); e.kind = "not_found"; throw e; }
+      if (!r.ok) { var e2 = new Error("http_" + r.status); e2.kind = "http"; throw e2; }
+      return r.json();
+    }).then(function (data) {
+      lsSet("meta", data);
+      return data;
+    }).catch(function (err) {
+      var cached = lsGet("meta");
+      if (cached) return cached;
+      throw err;
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Boot / router
+  // ---------------------------------------------------------------------
+  function boot() {
+    clearTimers();
+
+    if (!navigator.onLine) { renderOffline(); return; }
+
+    renderState(
+      '<div class="panel skel-header"><div class="skel skel-logo"></div><div class="skel-lines"><div class="skel skel-line w60"></div><div class="skel skel-line"></div></div></div>' +
+      '<div class="panel skel-grid" style="margin-top:16px;"><div class="skel skel-cell"></div><div class="skel skel-cell"></div><div class="skel skel-cell"></div><div class="skel skel-cell"></div></div>' +
+      '<div class="panel skel-chart" style="margin-top:16px;"></div>'
+    );
+
+    loadProjects().then(function (data) {
+      var projects = Array.isArray(data.projects) ? data.projects : [];
+      state.projects = projects;
+
+      if (!data.updatedAt || projects.length === 0) { renderOnboarding(); return; }
+
+      var slug = qs("slug");
+      state.slug = slug;
+
+      if (!slug) { renderList(projects); return; }
+
+      var match = projects.find(function (p) { return p.slug === slug.toLowerCase(); });
+      if (!match) { renderNotFound(slug); return; }
+      if (!match.active) { renderInactive(match); return; }
+
+      state.project = match;
+      renderDashboard(match);
+    }).catch(function (err) {
+      if (err && err.kind === "not_found") { renderOnboarding(); return; }
+      if (!navigator.onLine) { renderOffline(); return; }
+      renderError(
+        "Couldn't load project list",
+        "The dashboard couldn't reach <code>projects.json</code>. This may be a temporary network issue.",
+        { onRetry: boot }
+      );
+    });
+  }
+
+  window.addEventListener("online", boot);
+  window.addEventListener("offline", function () { setRefreshState("offline"); });
+  window.addEventListener("popstate", boot);
+
+  boot();
+})();
+</script>
+</body>
+</html>
