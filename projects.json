@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-28T16:20:34.114Z",
+  "updatedAt": "2026-07-29T08:56:43.803Z",
   "projects": [
     {
       "name": "Bitcoin",
@@ -8,13 +8,28 @@
       "active": true,
       "sortOrder": 1,
       "description": "Decentralized digital currency",
-      "category": "Layer 1",
+      "category": "",
       "website": "https://bitcoin.org",
-      "whitepaper": "https://bitcoin.org/bitcoin.pdf",
+      "whitepaper": "",
       "github": "https://github.com/bitcoin/bitcoin",
       "docs": "",
       "twitter": "",
       "notionPageId": "3ab66424-0c11-80eb-bb16-cd02c4ece48a"
+    },
+    {
+      "name": "Arrow Finance",
+      "slug": "arrow",
+      "coingeckoId": "arrow-2",
+      "active": true,
+      "sortOrder": 2,
+      "description": "DeFi on Robinhood Ecosystem",
+      "category": "",
+      "website": "https://www.arrowfinance.io/",
+      "whitepaper": "",
+      "github": "",
+      "docs": "",
+      "twitter": "",
+      "notionPageId": "3ac66424-0c11-806e-a6ce-d4cd8f456c9b"
     }
   ]
 }
