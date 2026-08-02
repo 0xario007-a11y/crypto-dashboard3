@@ -1,11 +1,11 @@
 {
-  "updatedAt": "2026-07-30T10:52:18.788Z",
+  "updatedAt": "2026-08-02T10:52:24.957Z",
   "projects": [
     {
       "name": "Bitcoin",
       "slug": "bitcoin",
       "coingeckoId": "bitcoin",
-      "active": false,
+      "active": true,
       "sortOrder": 1,
       "description": "Decentralized digital currency",
       "category": "",
@@ -25,7 +25,7 @@
       "name": "Arrow Finance",
       "slug": "arrow",
       "coingeckoId": "arrow-2",
-      "active": false,
+      "active": true,
       "sortOrder": 2,
       "description": "DeFi on Robinhood Ecosystem",
       "category": "",
